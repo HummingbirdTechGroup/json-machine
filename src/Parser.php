@@ -64,12 +64,16 @@ class Parser implements \IteratorAggregate
     /** @var Decoder */
     private $jsonDecoder;
 
+    /** @var array */
+    private $nonDecodedFields;
+
     /**
      * @param \Traversable $lexer
      * @param string $jsonPointer Follows json pointer RFC https://tools.ietf.org/html/rfc6901
      * @param Decoder $jsonDecoder
+     * @param array $nonDecodedFields
      */
-    public function __construct(\Traversable $lexer, $jsonPointer = '', $jsonDecoder = null)
+    public function __construct(\Traversable $lexer, $jsonPointer = '', $jsonDecoder = null, $nonDecodedFields = [])
     {
         if (0 === preg_match('_^(/(([^/~])|(~[01]))*)*$_', $jsonPointer, $matches)) {
             throw new InvalidArgumentException(
@@ -85,6 +89,7 @@ class Parser implements \IteratorAggregate
             );
         }, explode('/', $jsonPointer)), 1);
         $this->jsonDecoder = $jsonDecoder ?: new ExtJsonDecoder(true);
+        $this->nonDecodedFields = $nonDecodedFields;
     }
 
     /**
@@ -187,6 +192,10 @@ class Parser implements \IteratorAggregate
             }
             if ($currentLevel === $iteratorLevel && $jsonBuffer !== '') {
                 if ($currentPath == $this->jsonPointerPath) {
+                    if (in_array(trim($key, '"'), $this->nonDecodedFields)) {
+                        yield $key => $jsonBuffer;
+                        continue;
+                    }
                     $valueResult = $this->jsonDecoder->decodeValue($jsonBuffer);
                     // inlined
                     if ( ! $valueResult->isOk()) {
