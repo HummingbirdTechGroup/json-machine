@@ -193,7 +193,7 @@ class Parser implements \IteratorAggregate
             if ($currentLevel === $iteratorLevel && $jsonBuffer !== '') {
                 if ($currentPath == $this->jsonPointerPath) {
                     if (in_array(trim($key, '"'), $this->nonDecodedFields)) {
-                        yield $key => $jsonBuffer;
+                        yield trim($key, '"') => $jsonBuffer;
                         continue;
                     }
                     $valueResult = $this->jsonDecoder->decodeValue($jsonBuffer);
